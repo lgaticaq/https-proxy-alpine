@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 cd /etc/ssl/private/
 
 # Check if a combined certificate exists
