@@ -1,8 +1,12 @@
 # HTTPS Proxy
 
-[![](https://images.microbadger.com/badges/image/yajo/https-proxy.svg)](https://microbadger.com/images/yajo/https-proxy)
+[![dockeri.co](http://dockeri.co/image/lgatica/https-proxy-alpine)](https://hub.docker.com/r/lgatica/https-proxy-alpine/)
 
-Use [HAProxy][] to create a HTTPS proxy.
+[![Build Status](https://travis-ci.org/lgaticaq/https-proxy-alpine.svg?branch=master)](https://travis-ci.org/lgaticaq/https-proxy-alpine)
+
+Fork from [yajo/docker-https-proxy](https://bitbucket.org/yajo/docker-https-proxy)
+
+Use HAProxy to create a HTTPS proxy.
 
 To understand settings in configuration files, see
 [online manual](https://cbonte.github.io/haproxy-dconv/).
@@ -17,48 +21,47 @@ container for load balancing and link it to this one to add HTTPS to it.
 
 ## Usage
 
-Just link it to any container listening on port 80
-(let's call it LC for Linked Container):
+Replace PORT and HOST with your port and ip:
 
-    docker run -d -p 80:80 -p 443:443 --link LC:www yajo/https-proxy
+```bash
+docker run -d -p 80:80 -e PORT=8000 -e HOST=192.168.1.2 -p 443:443 lgatica/https-proxy-alpine
+```
 
 Then navigate to `https://localhost` and add security exception.
 
-### When the LC exposes other port
-
-The proxy will use `www:$PORT` as origin, so run it as:
-
-    docker run -e PORT=8080 --link LC:www yajo/https-proxy
-
 ### When you have a real certificate
 
-You can put your `key.pem` and `cert.pem` files under `/etc/ssl/private/`
-in a subimage. Your `Dockerfile` will be similar to:
+You can supply them with environment variables:
 
-    FROM yajo/https-proxy
-    MAINTAINER you@example.com
-    ADD cert.pem key.pem /etc/ssl/private/
+```bash
+openssl req -x509 -sha256 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -batch -nodes
+docker run -d -p 80:80 -e PORT=8000 -e HOST=192.168.1.2 -e KEY="$(cat key.pem)" -e CERT="$(cat cert.pem)" -p 443:443 lgatica/https-proxy-alpine
+```
 
-You can also supply them with environment variables:
+Or use a volume
 
-    docker run -e KEY="$(cat key.pem)" -e CERT="$(cat cert.pem)" --link LC:www yajo/https-proxy
+```bash
+mkdir certs && cd certs
+openssl req -x509 -sha256 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -batch -nodes
+cd ..
+docker run -d -p 80:80 -e PORT=8000 -e HOST=192.168.1.2 -v certs:/etc/ssl/private/ -p 443:443 lgatica/https-proxy-alpine
+```
 
 ### When you want custom error pages
 
-This is preconfigured to use error pages from the examples. Just override the
-corresponding error page found in `/usr/local/etc/haproxy/errors` in your
-subimage:
+This is preconfigured to use error pages from the examples.
 
-    FROM yajo/https-proxy
-    MAINTAINER you@example.com
-    ADD 400.http 503.http /usr/local/etc/haproxy/errors/
+```bash
+mkdir errors && cd errors && touch 400.http && cd ..
+docker run -d -p 80:80 -e PORT=8000 -e HOST=192.168.1.2 -v errors:/usr/local/etc/haproxy/errors/ -p 443:443 lgatica/https-proxy-alpine
+```
 
 ### Automatic redirection of HTTP
 
 This image will redirect all HTTP traffic to HTTPS, but this is a job that
-**should** be handled by your LC in production to avoid this little overhead.
+**should** be handled by your host in production to avoid this little overhead.
 
-To help your LC know it is proxied (because it will seem to the LC like
+To help your host know it is proxied (because it will seem to the host like
 requests come in HTTP form), all requests will have this additional
 header: `X-Forwarded-Proto: https`.
 
@@ -68,21 +71,5 @@ redirections, or just use relative (`../other-page`) or protocol-agnostic
 anywhere (this is a good practice, BTW).
 
 If you don't want this forced redirection (to maintain both HTTP and HTTPS
-versions of your site), just expose port 80 from your LC and port 443
+versions of your site), just expose port 80 from your host and port 443
 from the proxy.
-
-## Testing
-
-To test what HTTP headers get to the backend, clone the repo and run on it:
-
-    docker-compose up
-
-Then visit http://localhost to get a standard
-[`phpinfo()`](http://php.net/manual/en/function.phpinfo.php).
-
-## Feedback
-
-Please send any feedback (issues, questions) to the [issue tracker][].
-
-[HAProxy]: http://www.haproxy.org/
-[issue tracker]: https://bitbucket.org/yajo/docker-https-proxy/issues
