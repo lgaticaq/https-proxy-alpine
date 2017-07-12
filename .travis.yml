@@ -1,0 +1,17 @@
+sudo: required
+
+services:
+  - docker
+
+install:
+  - docker build -t lgatica/https-proxy-alpine:latest .
+
+script:
+  - docker run --rm lgatica/https-proxy-alpine:latest haproxy -v
+
+after_success:
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+  - docker push lgatica/https-proxy-alpine:latest
+
+notifications:
+  email: false
