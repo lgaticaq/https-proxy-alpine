@@ -1,14 +1,16 @@
-FROM haproxy
-MAINTAINER Jairo Llopis <yajo.sk8@gmail.com>
+FROM haproxy:alpine
+
+LABEL maintainer "Leonardo Gatica <lgatica@protonmail.com>"
 
 ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 CMD haproxy -- /usr/local/etc/haproxy/*.cfg
 EXPOSE 80 443
-ENV PORT 80
+ENV PORT=80 HOST=localhost
 
-RUN apt-get update && apt-get -y install openssl && apt-get clean &&\
-    useradd --create-home --home-dir /var/lib/haproxy haproxy &&\
+RUN apk add --no-cache openssl &&\
+    adduser -h /var/lib/haproxy -D haproxy &&\
     chmod go= /var/lib/haproxy
 
-ADD *.cfg /usr/local/etc/haproxy/
-ADD *.sh /usr/local/sbin/
+COPY *.cfg /usr/local/etc/haproxy/
+COPY *.sh /usr/local/sbin/
+VOLUME ["/etc/ssl/private", "/usr/local/etc/haproxy/errors"]
