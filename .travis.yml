@@ -9,9 +9,15 @@ install:
 script:
   - docker run --rm lgatica/https-proxy-alpine:latest haproxy -v
 
-after_success:
+before_deploy:
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-  - docker push lgatica/https-proxy-alpine:latest
+
+deploy:
+  provider: script
+  script: docker push lgatica/https-proxy-alpine:latest
+  skip_cleanup: true
+  on:
+    branch: master
 
 notifications:
   email: false
