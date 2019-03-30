@@ -1,4 +1,4 @@
-FROM haproxy:alpine@sha256:906f9c34bed3513756e70d2386cd5c8d743b0a39850c92c3fb0258ffc108ed27
+FROM haproxy:alpine@sha256:e8b5b98f3d5f67d0bddb3d3c27ef564434055fe4c68ff449b4b82ca96acabb1b
 
 LABEL maintainer "Leonardo Gatica <lgatica@protonmail.com>"
 
